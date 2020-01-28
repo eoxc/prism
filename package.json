@@ -3,13 +3,9 @@
   "version": "1.1.0-rc.25",
   "description": "prism",
   "scripts": {
-    "build": "webpack -p && cp src/index.html dist/",
+    "build": "webpack -p && cp src/index.html dist/ && cp src/*.json dist/",
     "build-dev": "webpack -d",
-    "watch": "webpack -d --watch",
-    "build-browser-tests": "webpack -d --config webpack.tests.config.js",
-    "build-browser-tests:watch": "npm run build-browser-tests -- --watch",
     "dev-server": "webpack-dev-server -d --content-base src/",
-    "docs": "node_modules/.bin/jsdoc README.md src -d ./docs -r -P package.json -t node_modules/minami",
     "lint": "./node_modules/.bin/eslint src"
   },
   "repository": {
