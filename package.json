@@ -3,7 +3,7 @@
   "version": "1.1.0-rc.25",
   "description": "prism",
   "scripts": {
-    "build": "webpack -p && cp src/index.html dist/ && cp src/*.json dist/",
+    "build": "webpack -p && cp src/*.html dist/ && cp src/*.json dist/",
     "build-dev": "webpack -d",
     "dev-server": "webpack-dev-server -d --content-base src/",
     "lint": "./node_modules/.bin/eslint src"
