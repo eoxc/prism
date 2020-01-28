@@ -155,7 +155,7 @@
         "id":"VHR_IMAGE_2018_Level_1__TRUE_COLOR",
         "visible":false,
         "protocol":"WMS",
-        "url":"{{{baseUrl}}}cache/ows",
+        "url":"{{{vhrDisplayL1Url}}}",
         "format":"image/png",
         "style":"",
         "useMilliseconds":false,
@@ -187,7 +187,7 @@
       },
       "search":{ 
         "protocol":"OpenSearch",
-        "url":"{{{baseUrl}}}opensearch/collections/VHR_IMAGE_2018_Level_1/",
+        "url":"{{{vhrOpensearchL1Url}}}",
         "id":"VHR_IMAGE_2018_Level_1",
         "histogramBinCount":28,
         "format":"application/atom+xml",
@@ -213,7 +213,7 @@
       },
       "download":{ 
         "protocol":"EO-WCS",
-        "url":"{{{baseUrl}}}ows",
+        "url":"{{{vhrDownloadL1Url}}}",
         "rewrite":{ 
           "from":"({{id}})",
           "to":"$1__coverage"
@@ -228,7 +228,7 @@
         "id":"VHR_IMAGE_2018_Level_3__TRUE_COLOR",
         "visible":true,
         "protocol":"WMS",
-        "url":"{{{baseUrl}}}cache/ows",
+        "url":"{{{vhrDisplayL3Url}}}",
         "format":"image/png",
         "style":"",
         "useMilliseconds":false,
@@ -260,7 +260,7 @@
       },
       "search":{ 
         "protocol":"OpenSearch",
-        "url":"{{{baseUrl}}}opensearch/collections/VHR_IMAGE_2018_Level_3/",
+        "url":"{{{vhrOpensearchL3Url}}}",
         "id":"VHR_IMAGE_2018_Level_3",
         "histogramBinCount":28,
         "format":"application/atom+xml",
@@ -286,7 +286,7 @@
       },
       "download":{ 
         "protocol":"EO-WCS",
-        "url":"{{{baseUrl}}}ows",
+        "url":"{{{vhrDownloadL3Url}}}",
         "rewrite":{ 
           "from":"({{id}})",
           "to":"$1__coverage"
@@ -319,7 +319,7 @@
         "id":"VHR_IMAGE_2018_Level_3__outlines",
         "visible":false,
         "protocol":"WMS",
-        "url":"{{{baseUrl}}}ows",
+        "url":"{{{vhrOutlinesL3Url}}}",
         "format":"image/png",
         "style":"red",
         "useMilliseconds":false,
@@ -334,7 +334,7 @@
         "id":"VHR_IMAGE_2018_Level_3__Full",
         "visible":false,
         "protocol":"WMS",
-        "url":"{{{baseUrl}}}cache/ows",
+        "url":"{{{vhrOutlinesL3FullUrl}}}",
         "format":"image/png",
         "maxZoom":17,
         "synchronizeTime":false
@@ -347,7 +347,7 @@
         "id":"VHR_IMAGE_2018_Level_3__masked_validity__Full",
         "visible":false,
         "protocol":"WMS",
-        "url":"{{{baseUrl}}}cache/ows",
+        "url":"{{{vhrOutlinesL3MaskedFullUrl}}}",
         "format":"image/png",
         "maxZoom":17,
         "synchronizeTime":false

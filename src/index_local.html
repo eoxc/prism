@@ -19,19 +19,18 @@
   <script>
   var now = new Date();
   now.setUTCHours(24, 0, 0, 0);
-  var baseUrl = "//vhr18.pdas.prism.eox.at/";
-
+  var baseUrl = "//127.0.0.1";
   var dynamicConfig = {
     "datetimeNow": now
-    "vhrDisplayL1Url": baseUrl + "cache/ows",
-    "vhrDownloadL1Url": baseUrl + "ows",
-    "vhrOpensearchL1Url": baseUrl + "opensearch/collections/VHR_IMAGE_2018_Level_1/",
-    "vhrDisplayL3Url": baseUrl + "cache/ows",
-    "vhrDownloadL3Url": baseUrl + "ows",
-    "vhrOpensearchL3Url": baseUrl + "opensearch/collections/VHR_IMAGE_2018_Level_3/",
-    "vhrOutlinesL3Url": baseUrl + "ows"
-    "vhrOutlinesL3FullUrl": baseUrl + "cache/ows",
-    "vhrOutlinesL3MaskedFullUrl": baseUrl + "cache/ows"
+    "vhrDisplayL1Url": baseUrl + ":83/ows",
+    "vhrDownloadL1Url": baseUrl + ":81/ows",
+    "vhrOpensearchL1Url": baseUrl + ":81/opensearch/collections/VHR_IMAGE_2018_Level_1/",
+    "vhrDisplayL3Url": baseUrl + ":83/ows",
+    "vhrDownloadL3Url": baseUrl + ":81/ows",
+    "vhrOpensearchL3Url": baseUrl + ":81/opensearch/collections/VHR_IMAGE_2018_Level_3/",
+    "vhrOutlinesL3Url": baseUrl + ":81/ows"
+    "vhrOutlinesL3FullUrl": baseUrl + ":83/ows",
+    "vhrOutlinesL3MaskedFullUrl": baseUrl + ":83/ows"
   }
     var app = new Application({
       configPath: "vhr_2018_client_config.json",
