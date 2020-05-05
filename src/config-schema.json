@@ -186,6 +186,11 @@
                   "type": "boolean",
                   "default": true
                 },
+                "disableSearchParams" : {
+                  "description": "Disable using URL parameters for partial initial app config",
+                  "type": "boolean",
+                  "default": false
+                },
                 "highlightFillColor": {
                     "description": "The fill color of highlighted footprints/bounding boxes on the map. Any valid CSS color defintion is supported.",
                     "type": "string",
@@ -850,7 +855,7 @@
                             "type": "object",
                             "properties": {
                                 "from": {
-                                    "description": "The part of the URL that shall be rewritten (replaced). Will be interpreted as a regular expression.",
+                                    "description": "The part of the URL that shall be rewritten (replaced). Either Will be interpreted as a regular expression - usage without quotes or a template can be used - '{{ and }}' to use Record properties in regex. For example {{ id }} to select ID of product.",
                                     "type": "string"
                                 },
                                 "to": {
@@ -905,6 +910,11 @@
                         },
                         "maxBboxEdgeSize": {
                             "description": "A warning is shown when any edge of bounding box exceeds this value in Map CRS.",
+                            "type": "number",
+                            "default": null
+                        },
+                        "maxAllowedResolution": {
+                            "description": "A warning is shown when user input resolution is greater than this value in Map CRS.",
                             "type": "number",
                             "default": null
                         },

@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import $ from 'jquery';
 import 'jquery-ui';
+import 'url-search-params-polyfill';
 
 import _ from 'underscore'; // eslint-disable-line import/no-extraneous-dependencies
 import Backbone from 'backbone'; // eslint-disable-line import/no-extraneous-dependencies
@@ -47,7 +48,7 @@ import CombinedResultView from './views/combined/CombinedResultView';
 import WarningsCollection from './models/WarningsCollection';
 
 import getTutorialWidget from './tutorial';
-import { premultiplyColor, sizeChangedEvent } from './utils';
+import { premultiplyColor, sizeChangedEvent, updateConfigBySearchParams, updateFiltersBySearchParams, setSearchParamsFilterChange } from './utils';
 
 import i18next from './i18next';
 
@@ -165,19 +166,19 @@ window.Application = Marionette.Application.extend({
   },
 
   onRun(config, baseLayersCollection, layersCollection, overlayLayersCollection, failedLayers) {
-    const settings = config.settings;
+    const configSettings = config.settings;
 
     // allow custom translations from the settings
-    if (settings.translations) {
-      Object.keys(settings.translations)
+    if (configSettings.translations) {
+      Object.keys(configSettings.translations)
         .forEach(
           lng => i18next.addResourceBundle(
-            lng, 'translation', settings.translations[lng], true, true
+            lng, 'translation', configSettings.translations[lng], true, true
           )
         );
     }
 
-    _.defaults(settings, {
+    _.defaults(configSettings, {
       center: [0, 0],
       zoom: 2,
       minZoom: 0,
@@ -205,6 +206,7 @@ window.Application = Marionette.Application.extend({
       leftPanelTabIndex: 0,
       rightPanelTabIndex: 0,
       enableSingleLayerMode: true,
+      disableSearchParams: false,
       downloadFormats: [],
       downloadProjections: [],
       downloadInterpolations: [],
@@ -214,6 +216,16 @@ window.Application = Marionette.Application.extend({
       selectFilesDownloadEnabled: true,
       filterSettings: null,
     });
+    // determine if singleLayerModeUsed
+    const searchEnabledLayers = layersCollection.filter(layerModel => layerModel.get('search.protocol'));
+    const singleLayerModeUsed = searchEnabledLayers.length === 1 && configSettings.enableSingleLayerMode;
+
+    // intercept searchParams to see if config change from user (url)
+    const settings = updateConfigBySearchParams(configSettings);
+    if (singleLayerModeUsed && !config.disableSearchParams) {
+      // intercept searchParams to see if custom filters set from user (url)
+      updateFiltersBySearchParams(searchEnabledLayers);
+    }
 
     // set up config
     const mapModel = new MapModel({
@@ -231,8 +243,7 @@ window.Application = Marionette.Application.extend({
     const filtersModel = new FiltersModel({ });
     const highlightModel = new HighlightModel();
 
-    const searchModels = layersCollection
-      .filter(layerModel => layerModel.get('search.protocol'))
+    const searchModels = searchEnabledLayers
       .map(layerModel => new SearchModel({
         layerModel,
         // apply defaults / fixed values
@@ -253,6 +264,13 @@ window.Application = Marionette.Application.extend({
       }));
     const searchCollection = new Backbone.Collection(searchModels);
 
+    if (singleLayerModeUsed && !config.disableSearchParams) {
+      // update url searchParams when filter change listener
+      searchModels[0].get('filtersModel').on('change', (fModel) => {
+        setSearchParamsFilterChange(fModel);
+      });
+    }
+
     // set up layout
     const layout = new RootLayoutView({
       el: $(this.container),
@@ -269,8 +287,6 @@ window.Application = Marionette.Application.extend({
       start: new Date(settings.displayTimeDomain[0]),
       end: new Date(settings.displayTimeDomain[1]),
     } : domain;
-
-    const singleLayerModeUsed = searchCollection.length === 1 && settings.enableSingleLayerMode;
 
     layout.showChildView('timeSlider', new TimeSliderView({
       layersCollection,
@@ -293,6 +309,7 @@ window.Application = Marionette.Application.extend({
       selectableInterval: settings.selectableInterval,
       maxTooltips: settings.maxTooltips,
       enableDynamicHistogram: settings.enableDynamicHistogram,
+      singleLayerModeUsed
     }));
 
     // set up panels
@@ -360,7 +377,7 @@ window.Application = Marionette.Application.extend({
       sendProcessingRequest(searchModel, mapModel);
     });
 
-    layout.showChildView('content', new OpenLayersMapView({
+    const mainOLView = new OpenLayersMapView({
       mapModel,
       filtersModel,
       baseLayersCollection,
@@ -382,7 +399,15 @@ window.Application = Marionette.Application.extend({
         showRecordDetails(records);
       },
       constrainOutCoords: settings.constrainOutCoords,
-    }));
+      singleLayerModeUsed
+    });
+
+    layout.showChildView('content', mainOLView);
+    if (!config.disableSearchParams && typeof mainOLView.setupSearchParamsEvents === 'function') {
+      mainOLView.setupSearchParamsEvents();
+      mainOLView.setSearchParamCenter();
+      // zoom is not explicitely set, as some other event already triggers it
+    }
 
     layout.showChildView('leftPanel', new SidePanelView({
       position: 'left',
@@ -393,6 +418,9 @@ window.Application = Marionette.Application.extend({
         name: 'Filters',
         view: new RootFiltersView({
           filtersModel,
+          layersCollection,
+          baseLayersCollection,
+          overlayLayersCollection,
           mapModel,
           highlightModel,
           searchCollection,
