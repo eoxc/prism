@@ -18,6 +18,16 @@
   <script src="prism.js"></script>
   <script>
   var baseUrl = '//vhr18.pdas.prism.eox.at/';
+  var baseUrlsWMTS = [
+    '//a.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//b.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//c.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//d.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//e.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//f.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//g.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//h.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+  ];
   var config = {
     "settings": {
         "rightPanelOpen": true,
@@ -192,11 +202,12 @@
             "display": {
                 "id": 'VHR_IMAGE_2018_Level_1__TRUE_COLOR',
                 "visible": false,
-                "protocol": 'WMS',
-                "url": baseUrl + 'cache/ows',
+                "protocol": 'WMTS',
+                "urls": baseUrlsWMTS,
                 "format": 'image/png',
                 "projection": 'EPSG:4326',
-                "style": '',
+                "matrixSet": "WGS84",
+                "style": 'default',
                 "useMilliseconds": false,
                 "maxZoom": 17,
                 "options": [{
@@ -290,11 +301,12 @@
             "display": {
                 "id": 'VHR_IMAGE_2018_Level_3__TRUE_COLOR',
                 "visible": true,
-                "protocol": 'WMS',
-                "url": baseUrl + 'cache/ows',
+                "protocol": 'WMTS',
+                "urls": baseUrlsWMTS,
                 "format": 'image/png',
                 "projection": 'EPSG:4326',
-                "style": '',
+                "matrixSet": "WGS84",
+                "style": 'default',
                 "useMilliseconds": false,
                 "maxZoom": 17,
                 "options": [{

@@ -66,7 +66,7 @@
     "bootstrap": "^3.4.1",
     "bootstrap-slider": "^9.9.1",
     "eonasdan-bootstrap-datetimepicker": "^4.17.42",
-    "eoxc": "eoxc/eoxc#e6444f62740d98cc4aa6b4d1cb0b7e198164a3ee",
+    "eoxc": "eoxc/eoxc#70a03c44d1a85856b798773c23154b964db77c78",
     "i18next": "^3.4.1",
     "jquery": "^2.2.3",
     "jquery-ui": "^1.10.5",
