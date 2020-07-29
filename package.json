@@ -60,23 +60,25 @@
     "webpack-dev-server": "^1.14.1"
   },
   "dependencies": {
+    "@tmcw/togeojson": "github:tmcw/togeojson",
     "anno.js": "^1.0.3",
     "autoprefixer": "^6.7.5",
     "backbone.marionette": "^2.4.7",
     "bootstrap": "^3.4.1",
     "bootstrap-slider": "^9.9.1",
     "eonasdan-bootstrap-datetimepicker": "^4.17.42",
-    "eoxc": "eoxc/eoxc#70a03c44d1a85856b798773c23154b964db77c78",
+    "eoxc": "eoxc/eoxc#969eb010bd3392201c398f5412d94685f79ed8df",
     "i18next": "^3.4.1",
     "jquery": "^2.2.3",
     "jquery-ui": "^1.10.5",
+    "jszip": "^2.6.1",
     "moment-timezone": "^0.5.10",
     "parse-color": "^1.0.0",
     "postcss-loader": "^1.3.2",
     "script-path": "^1.0.1",
-    "shpjs": "github:calvinmetcalf/shapefile-js#v3.3.2",
+    "shpjs": "github:calvinmetcalf/shapefile-js#v3.5.0",
     "tether-shepherd": "^1.8.1",
-    "worker-loader": "^0.7.1",
-    "url-search-params-polyfill": "^8.1.0"
+    "url-search-params-polyfill": "^8.1.0",
+    "worker-loader": "^0.7.1"
   }
 }

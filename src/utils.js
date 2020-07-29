@@ -3,6 +3,8 @@ import shp from 'shpjs';
 import moment from 'moment';
 import { parseDuration } from 'eoxc/src/contrib/OpenLayers/utils';
 import { setSearchParam } from 'eoxc/src/core/util'
+import { kml } from '@tmcw/togeojson';
+import JSZip from 'jszip';
 
 export function readFileAsArraybuffer(file) {
   return new Promise((resolve, reject) => {
@@ -45,6 +47,8 @@ export function premultiplyColor(colorDef) {
 
 const dbfMimes = new Set(['application/dbase', 'application/x-dbase', 'application/dbf', 'application/x-dbf']);
 const jsonMimes = new Set(['application/json', 'text/json', 'text/x-json']);
+const kmlMimes = new Set(['application/vnd.google-earth.kml+xml']);
+const kmzMimes = new Set(['application/vnd.google-earth.kmz']);
 
 export function parseFeaturesFromFiles(fileList) {
   let files;
@@ -58,6 +62,8 @@ export function parseFeaturesFromFiles(fileList) {
   const shpFile = files.find(file => /\.shp$/i.test(file.name)); // TODO: no mime?
   const dbfFile = files.find(file => dbfMimes.has(file.type) || /\.dbf$/i.test(file.name));
   const jsonFile = files.find(file => jsonMimes.has(file.type) || /\.json$/i.test(file.name));
+  const kmlFile = files.find(file => kmlMimes.has(file.type) || /\.kml$/i.test(file.name));
+  const kmzFile = files.find(file => kmzMimes.has(file.type) || /\.kmz$/i.test(file.name));
 
   if (zipFile) {
     return readFileAsArraybuffer(zipFile)
@@ -67,6 +73,34 @@ export function parseFeaturesFromFiles(fileList) {
       .then(([shpBuffer, dbfBuffer]) => shp.combine([
         shp.parseShp(shpBuffer), shp.parseDbf(dbfBuffer)
       ]).features);
+  } else if (kmlFile) {
+    return readAsText(kmlFile)
+      .then((text) => {
+        const content = kml(new DOMParser().parseFromString(text, 'text/xml'));
+        if (content.type === 'Feature') {
+          return [content];
+        } else if (content.type === 'FeatureCollection') {
+          return content.features;
+        }
+        throw new Error('File content is not valid KML');
+      });
+  } else if (kmzFile) {
+    return readFileAsArraybuffer(kmzFile)
+    .then((buffer) => {
+      const zip = JSZip(buffer);
+      const features = [];
+      zip.file(/.+/).forEach((a) => {
+        if (a.name.slice(-3).toLowerCase() === 'kml') {
+          const content = kml(new DOMParser().parseFromString(a.asText(), 'text/xml'));
+          if (content.type === 'Feature') {
+            features.push(content);
+          } else if (content.type === 'FeatureCollection') {
+            features.push(...content.features);
+          }
+        }
+      });
+      return features;
+    });
   } else if (shpFile) {
     return readFileAsArraybuffer(shpFile)
       .then(shpBuffer => (
