@@ -205,6 +205,19 @@ export function updateConfigBySearchParams(config) {
   return configUpdate;
 }
 
+export function updateAreaBySearchParams(mapModel) {
+  let actualWindowObject = window;
+  if (window.self !== window.top) { // checking if it is an iframe
+    actualWindowObject = window.parent;
+  }
+  // extracts search parameters in url and update settings replacing keys with user supported ones
+  const params = new URLSearchParams(actualWindowObject.location.search);
+  const area = params.get('area');
+  if (typeof area === 'string') {
+    mapModel.filterFromSearchParams(area);
+  }
+}
+
 export function updateFiltersBySearchParams(layerCollection) {
   // for single layer mode, update values of search filters from url search params
   const params = new URLSearchParams(window.location.search);
