@@ -6,7 +6,7 @@ const eoxcPackageJson = require('eoxc/package.json');
 
 module.exports = {
   entry: {
-    prism: ['babel-polyfill', './src/preload.js', './src/main.js'],
+    vsclient: ['babel-polyfill', './src/preload.js', './src/main.js'],
   },
   resolve: {
     modulesDirectories: ['web_modules', 'node_modules', 'bower_components'],
@@ -23,7 +23,7 @@ module.exports = {
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[name].js',
-    library: 'prism',
+    library: 'vsclient',
     libraryTarget: 'umd',
   },
   devServer: {
@@ -61,7 +61,7 @@ module.exports = {
       Promise: 'bluebird'
     }),
     new webpack.BannerPlugin(
-      `PRISM version: ${packageJson.version}\neoxc version: ${eoxcPackageJson.version}`
+      `VS Client version: ${packageJson.version}\neoxc version: ${eoxcPackageJson.version}`
     ),
   ],
   postcss() {
