@@ -4,39 +4,469 @@
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
   <meta charset="UTF-8">
   <title>PRISM Data Access Service</title>
-  <link rel="icon" href="//eox.at/wp-content/uploads/2015/06/cropped-eox_eye-192x192.png" sizes="192x192" />
-  <link rel="apple-touch-icon-precomposed" href="//eox.at/wp-content/uploads/2015/06/cropped-eox_eye-180x180.png" />
+  <link rel="icon" href="//eox.at/favicon.ico" type="image/x-icon">
+  <link rel="icon" sizes="16x16" href="//eox.at/favicon-16x16.png" type="image/png">
+  <link rel="icon" sizes="32x32" href="//eox.at/favicon-32x32.png" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="//eox.at/apple-touch-icon.png" type="image/png">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#004170">
 </head>
 <body>
   <header id="header" style="width: 100%; height:70px;">
     <h3 style="width:100%;text-align:center;
     color: #006699;">PRISM Data Access Service (PDAS) Client powered by
-    <a href="//eox.at"><img src="//eox.at/wp-content/uploads/2017/09/EOX_Logo.svg" alt="EOX" style="height:25px;margin-left:10px"/></a>
+    <a href="//eox.at"><img src="//eox.at/EOX_Logo.svg" alt="EOX" style="height:25px;margin-left:10px"/></a>
     </h3>
   </header>
   <div id="app" style="width: 100%; top: 60px; bottom: 0; position: absolute; margin: 0; padding:0;"></div>
   <script src="prism.js"></script>
   <script>
-  var now = new Date();
-  now.setUTCHours(24, 0, 0, 0);
-  var baseUrl = "//vhr18.pdas.prism.eox.at/";
+  var baseUrl = '//vhr18.pdas.prism.eox.at/';
+  var baseUrlsWMTS = [
+    '//a.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//b.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//c.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//d.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//e.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//f.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//g.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+    '//h.vhr18.pdas.prism.eox.at/cache/ows/wmts',
+  ];
+  var config = {
+    "settings": {
+        "rightPanelOpen": true,
+        "leftPanelOpen": false,
+        "leftPanelTabIndex": 0,
+        "tutorial": "once",
+        "uploadEnabled": true,
+        "selectFilesDownloadEnabled": false,
+        "downloadEnabled": true,
+        "searchEnabled" : true,
+        "searchDebounceTime": 500,
+        "language": "en",
+        "timeDomain": [
+            "2017-01-01T00:00:00Z",
+            "2019-12-31T23:59:59Z",
+        ],
+        "constrainTimeDomain": true,
+        "displayTimeDomain": [
+            "2018-08-01T00:00:00Z",
+            "2018-10-01T00:00:00Z",
+        ],
+        "displayInterval": "P1096D",
+        "selectedTimeDomain": [
+            "2018-08-25T00:00:00Z",
+            "2018-09-05T00:00:00Z",
+        ],
+        "selectableInterval": "P1096D",
+        "timeSliderControls": true,
+        "maxTooltips": 1,
+        "center": [12, 49],
+        "zoom": 5,
+        "maxZoom": 17,
+        "footprintFillColor": "rgba(0, 0, 0, 0.2)",
+        "footprintStrokeColor": "rgba(0, 0, 0, 1)",
+        "filterFillColor": "rgba(0, 165, 255, 0)",
+        "filterStrokeColor": "rgba(0, 165, 255, 1)",
+        "filterOutsideColor": "rgba(0, 0, 0, 0.5)",
+        "selectedFootprintFillColor": "rgba(255, 0, 0, 0.2)",
+        "selectedFootprintStrokeColor": "rgba(255, 0, 0, 1)",
+        "highlightFillColor": "rgba(246, 182, 0, 0.5)",
+        "highlightStrokeColor": "rgba(246, 182, 0, 1)",
+        "highlightStrokeWidth": 3,
+        "translations": {
+            "en": {
+                "Cloud Cover": "Cloud coverage (%)",
+                "Error: NoApplicableCode": "Search timed out. Please refine the filter criteria.",
+            }
+        },
+        "filterSettings": {
+            "time": {
+                "hidden": true,
+            }
+        },
+        "downloadFormats": [
+            {
+                "name": "TIFF",
+                "mimeType": "image/tiff"
+            },
+            {
+                "name": "JPEG 2000",
+                "mimeType": "image/jp2"
+            },
+            {
+                "name": "HDF",
+                "mimeType": "application/x-hdf",
+            },
+        ],
+        "downloadProjections": [
+            {
+                "name": "WGS-84",
+                "identifier": "http://www.opengis.net/def/crs/EPSG/0/4326"
+            },
+            {
+                "name": "Web Mercator",
+                "identifier": "http://www.opengis.net/def/crs/EPSG/0/3857"
+            },
+            {
+                "name": "ETRS89 / LAEA Europe",
+                "identifier": "http://www.opengis.net/def/crs/EPSG/0/3035"
+            }
+        ],
+        "downloadInterpolations": [
+            {
+              "name": "Bilinear",
+              "identifier": "http://www.opengis.net/def/interpolation/OGC/1/bilinear"
+            },
+            {
+                "name": "Nearest Neighbour",
+                "identifier": "http://www.opengis.net/def/interpolation/OGC/1/nearest-neighbour"
+            },
+            // {
+            //     "name": "Cubic",
+            //     "identifier": "http://www.opengis.net/def/interpolation/OGC/1/cubic"
+            // },
+            // {
+            //     "name": "Cubic Spline",
+            //     "identifier": "http://www.opengis.net/def/interpolation/OGC/1/cubic-spline"
+            // },
+            {
+                "name": "Average",
+                "identifier": "http://www.opengis.net/def/interpolation/OGC/1/average"
+            },
+            // {
+            //     "name": "Lanczos",
+            //     "identifier": "http://www.opengis.net/def/interpolation/OGC/1/lanczos"
+            // },
+            // {
+            //     "name": "Mode",
+            //     "identifier": "http://www.opengis.net/def/interpolation/OGC/1/mode"
+            // },
+        ]
+    },
+    "baseLayers": [
+        {
+            "id": "terrain-light",
+            "displayName": "EOX Terrain-Light",
+            "display": {
+                "id": "terrain-light",
+                "visible": true,
+                "protocol": "WMTS",
+                "urls": [
+                    "//d.s2maps-tiles.eu/wmts/",
+                    "//e.s2maps-tiles.eu/wmts/"
+                ],
+                "matrixSet": "WGS84",
+                "format": "image/png",
+                "projection": "EPSG:4326",
+                "style": "default",
+                "attribution": "Terrain-Light { Data &copy; <a href=\"//www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap</a> contributors and <a href='javascript:;' onClick='toggle(terrain_attribution)'>others</a>, Rendering &copy; <a href=\"//eox.at\" target=\"_blank\">EOX</a> }"
+            }
+        }, {
+            "id": "terrain",
+            "displayName": "EOX Terrain",
+            "display": {
+                "id": "terrain",
+                "visible": false,
+                "protocol": "WMTS",
+                "urls": [
+                    "//d.s2maps-tiles.eu/wmts/",
+                    "//e.s2maps-tiles.eu/wmts/"
+                ],
+                "matrixSet": "WGS84",
+                "format": "image/png",
+                "projection": "EPSG:4326",
+                "style": "default",
+                "attribution": "Terrain { Data &copy; <a href=\"//www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap</a> contributors and <a href='javascript:;' onClick='toggle(terrain_attribution)'>others</a>, Rendering &copy; <a href=\"//eox.at\" target=\"_blank\">EOX</a> }"
+            }
+        },  {
+            "id": "s2cloudless",
+            "displayName": "EOX Sentinel-2 cloudless",
+            "display": {
+                "id": "s2cloudless-2018",
+                "visible": false,
+                "protocol": "WMTS",
+                "urls": [
+                    "//d.s2maps-tiles.eu/wmts/",
+                    "//e.s2maps-tiles.eu/wmts/"
+                ],
+                "matrixSet": "WGS84",
+                "format": "image/png",
+                "projection": "EPSG:4326",
+                "style": "default",
+                "attribution": "<a xmlns:dct=\"//purl.org/dc/terms/\" href=\"//s2maps.eu\" property=\"dct:title\">Sentinel-2 cloudless - //s2maps.eu</a> by <a xmlns:cc=\"//creativecommons.org/ns#\" href=\"s://eox.at\" property=\"cc:attributionName\" rel=\"cc:attributionURL\">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2017 &amp; 2018)"
+            }
+        }
+    ],
+    "layers": [
+        {
+            "id": 'VHR_IMAGE_2018_Level_1',
+            "displayName": 'VHR Image 2018 Level 1',
+            "displayColor": '#eb3700',
+            "display": {
+                "id": 'VHR_IMAGE_2018_Level_1__TRUE_COLOR',
+                "visible": false,
+                "protocol": 'WMTS',
+                "urls": baseUrlsWMTS,
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "matrixSet": "WGS84",
+                "style": 'default',
+                "useMilliseconds": false,
+                "maxZoom": 17,
+                "options": [{
+                    "name": "Style",
+                    "target": "display.extraParameters.LAYERS",
+                    "values": [{
+                      "label": "VHR Image 2018 True Color",
+                      "value": "VHR_IMAGE_2018_Level_1__TRUE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 True Color with masked validity",
+                      "value": "VHR_IMAGE_2018_Level_1__masked_validity",
+                    }, {
+                      "label": "VHR Image 2018 False Color",
+                      "value": "VHR_IMAGE_2018_Level_1__FALSE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 NDVI",
+                      "value": "VHR_IMAGE_2018_Level_1__NDVI",
+                    }]
+                }],
+            },
+            "detailsDisplay": {
+                "id": 'VHR_IMAGE_2018_Level_1__TRUE_COLOR',
+                "visible": true,
+                "protocol": 'WMS',
+                "url": baseUrl + 'cache/ows',
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "style": '',
+                "useMilliseconds": false,
+                "maxZoom": 17,
+                "options": [{
+                    "name": "Style",
+                    "target": "detailsDisplay.extraParameters.LAYERS",
+                    "values": [{
+                      "label": "VHR Image 2018 True Color",
+                      "value": "VHR_IMAGE_2018_Level_1__TRUE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 True Color with masked validity",
+                      "value": "VHR_IMAGE_2018_Level_1__masked_validity",
+                    }, {
+                      "label": "VHR Image 2018 False Color",
+                      "value": "VHR_IMAGE_2018_Level_1__FALSE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 NDVI",
+                      "value": "VHR_IMAGE_2018_Level_1__NDVI",
+                    }]
+                }],
+            },
+            "search": {
+                "protocol": "OpenSearch",
+                "url": baseUrl + "opensearch/collections/VHR_IMAGE_2018_Level_1/",
+                "id": "VHR_IMAGE_2018_Level_1",
+                "histogramBinCount": 28,
+                "format": "application/atom+xml",
+                "method": "GET",
+                "histogramThreshold": 600,
+                "lightweightBuckets": true,
+                "searchLimit": 600,
+                "loadMore": 600,
+                "pageSize": 200,
+                "countZeroRecords": true,
+                "parameters": [
+                  {
+                      "max": 100,
+                      "min": 0,
+                      "step": 1,
+                      "range": true,
+                      "type": "eo:cloudCover",
+                      "title": "Cloud Coverage"
+                  },
+                ],
+                "parametersFilterSettings": {
+                    "collapsed": false,
+                },
+            },
+            "download": {
+                "protocol": "EO-WCS",
+                "url": baseUrl + "ows",
+                // "method": "GET",
+                "rewrite": {
+                  // add __coverage to the coverageId
+                  "from": "({{id}})",
+                  "to": "$1__coverage"
+                }
+            }
+        },
+        {
+            "id": 'VHR_IMAGE_2018_Level_3',
+            "displayName": 'VHR Image 2018 Level 3',
+            "displayColor": '#37eb00',
+            "display": {
+                "id": 'VHR_IMAGE_2018_Level_3__TRUE_COLOR',
+                "visible": true,
+                "protocol": 'WMTS',
+                "urls": baseUrlsWMTS,
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "matrixSet": "WGS84",
+                "style": 'default',
+                "useMilliseconds": false,
+                "maxZoom": 17,
+                "options": [{
+                    "name": "Style",
+                    "target": "display.extraParameters.LAYERS",
+                    "values": [{
+                      "label": "VHR Image 2018 True Color",
+                      "value": "VHR_IMAGE_2018_Level_3__TRUE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 True Color with masked validity",
+                      "value": "VHR_IMAGE_2018_Level_3__masked_validity",
+                    }, {
+                      "label": "VHR Image 2018 False Color",
+                      "value": "VHR_IMAGE_2018_Level_3__FALSE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 NDVI",
+                      "value": "VHR_IMAGE_2018_Level_3__NDVI",
+                    }]
+                }],
+            },
+            "detailsDisplay": {
+                "id": 'VHR_IMAGE_2018_Level_3__TRUE_COLOR',
+                "visible": true,
+                "protocol": 'WMS',
+                "url": baseUrl + 'cache/ows',
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "style": '',
+                "useMilliseconds": false,
+                "maxZoom": 17,
+                "options": [{
+                    "name": "Style",
+                    "target": "detailsDisplay.extraParameters.LAYERS",
+                    "values": [{
+                      "label": "VHR Image 2018 True Color",
+                      "value": "VHR_IMAGE_2018_Level_3__TRUE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 True Color with masked validity",
+                      "value": "VHR_IMAGE_2018_Level_3__masked_validity",
+                    }, {
+                      "label": "VHR Image 2018 False Color",
+                      "value": "VHR_IMAGE_2018_Level_3__FALSE_COLOR",
+                    }, {
+                      "label": "VHR Image 2018 NDVI",
+                      "value": "VHR_IMAGE_2018_Level_3__NDVI",
+                    }]
+                }],
+            },
+            "search": {
+                "protocol": "OpenSearch",
+                "url": baseUrl + "opensearch/collections/VHR_IMAGE_2018_Level_3/",
+                "id": "VHR_IMAGE_2018_Level_3",
+                "histogramBinCount": 28,
+                "format": "application/atom+xml",
+                "method": "GET",
+                "histogramThreshold": 600,
+                "lightweightBuckets": true,
+                "searchLimit": 600,
+                "loadMore": 600,
+                "pageSize": 200,
+                "countZeroRecords": true,
+                "parameters": [
+                  {
+                      "max": 100,
+                      "min": 0,
+                      "step": 1,
+                      "range": true,
+                      "type": "eo:cloudCover",
+                      "title": "Cloud Coverage"
+                  },
+                ],
+                "parametersFilterSettings": {
+                    "collapsed": false,
+                },
+            },
+            "download": {
+                "protocol": "EO-WCS",
+                "url": baseUrl + "ows",
+                // "method": "GET",
+                "rewrite": {
+                  // add __coverage to the coverageId
+                  "from": "({{id}})",
+                  "to": "$1__coverage"
+                }
+            }
+        },
+    ],
+    "overlayLayers": [
+        {
+            "id": "overlay_base",
+            "displayName": "EOX Borders and Labels",
+            "display": {
+                "id": "overlay_base",
+                "visible": false,
+                "protocol": "WMTS",
+                "urls": [
+                    "//d.tiles.maps.eox.at/wmts/",
+                    "//e.tiles.maps.eox.at/wmts/"
+                ],
+                "matrixSet": "WGS84",
+                "style": "default",
+                "format": "image/png",
+                "projection": "EPSG:4326",
+                "attribution": "Overlay { Data &copy; <a href=\"//www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap</a> contributors, Rendering &copy; <a href=\"//eox.at\" target=\"_blank\">EOX</a> and <a href=\"//github.com/mapserver/basemaps\" target=\"_blank\">MapServer</a> }"
+            }
+        },
+        {
+            "id": 'VHR_IMAGE_2018_Level_3__outlines',
+            "displayName": 'VHR Image 2018 Level 3 Outlines',
+            "displayColor": '#187465',
+            "display": {
+                "id": 'VHR_IMAGE_2018_Level_3__outlines',
+                "visible": false,
+                "protocol": 'WMS',
+                "url": baseUrl + 'ows',
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "style": 'red',
+                "useMilliseconds": false,
+                "maxZoom": 17,
+                "synchronizeTime": true,
+            },
+        },
+        {
+            "id": 'VHR_IMAGE_2018_Level_3__Full',
+            "displayName": 'VHR Image 2018 Level 3 True Color Full Coverage',
+            "display": {
+                "id": 'VHR_IMAGE_2018_Level_3__Full',
+                "visible": false,
+                "protocol": 'WMS',
+                "url": baseUrl + 'cache/ows',
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "maxZoom": 17,
+                "synchronizeTime": false,
+            },
+        },
+        {
+            "id": 'VHR_IMAGE_2018_Level_3__masked_validity__Full',
+            "displayName": 'VHR Image 2018 Level 3 True Color with masked validity Full Coverage',
+            "display": {
+                "id": 'VHR_IMAGE_2018_Level_3__masked_validity__Full',
+                "visible": false,
+                "protocol": 'WMS',
+                "url": baseUrl + 'cache/ows',
+                "format": 'image/png',
+                "projection": 'EPSG:4326',
+                "maxZoom": 17,
+                "synchronizeTime": false,
+            },
+        }
+    ]
+};
 
-  var dynamicConfig = {
-    "datetimeNow": now
-    "vhrDisplayL1Url": baseUrl + "cache/ows",
-    "vhrDownloadL1Url": baseUrl + "ows",
-    "vhrOpensearchL1Url": baseUrl + "opensearch/collections/VHR_IMAGE_2018_Level_1/",
-    "vhrDisplayL3Url": baseUrl + "cache/ows",
-    "vhrDownloadL3Url": baseUrl + "ows",
-    "vhrOpensearchL3Url": baseUrl + "opensearch/collections/VHR_IMAGE_2018_Level_3/",
-    "vhrOutlinesL3Url": baseUrl + "ows"
-    "vhrOutlinesL3FullUrl": baseUrl + "cache/ows",
-    "vhrOutlinesL3MaskedFullUrl": baseUrl + "cache/ows"
-  }
     var app = new Application({
-      configPath: "vhr_2018_client_config.json",
+      config: config,
       container: document.getElementById('app'),
-      dynamicConfig: dynamicConfig
     });
     app.start();
   </script>

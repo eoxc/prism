@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import $ from 'jquery';
 import 'jquery-ui';
+import 'url-search-params-polyfill';
 
 import _ from 'underscore'; // eslint-disable-line import/no-extraneous-dependencies
 import Backbone from 'backbone'; // eslint-disable-line import/no-extraneous-dependencies
@@ -47,7 +48,7 @@ import CombinedResultView from './views/combined/CombinedResultView';
 import WarningsCollection from './models/WarningsCollection';
 
 import getTutorialWidget from './tutorial';
-import { premultiplyColor, sizeChangedEvent } from './utils';
+import { premultiplyColor, sizeChangedEvent, updateConfigBySearchParams, updateFiltersBySearchParams, setSearchParamsFilterChange, updateAreaBySearchParams, updateLayersBySearchParams, setSearchParamsLayersChange } from './utils';
 
 import i18next from './i18next';
 
@@ -65,7 +66,7 @@ function combineParameter(setting, param) {
   const options = setting.options || param.options;
   return {
     type: param.type,
-    name: param.name,
+    name: setting.name || param.name,
     title: param.title || setting.title,
     mandatory: setting.mandatory || param.mandatory,
     options,
@@ -175,19 +176,19 @@ window.Application = Marionette.Application.extend({
   },
 
   onRun(config, baseLayersCollection, layersCollection, overlayLayersCollection, failedLayers) {
-    const settings = config.settings;
+    const configSettings = config.settings;
 
     // allow custom translations from the settings
-    if (settings.translations) {
-      Object.keys(settings.translations)
+    if (configSettings.translations) {
+      Object.keys(configSettings.translations)
         .forEach(
           lng => i18next.addResourceBundle(
-            lng, 'translation', settings.translations[lng], true, true
+            lng, 'translation', configSettings.translations[lng], true, true
           )
         );
     }
 
-    _.defaults(settings, {
+    _.defaults(configSettings, {
       center: [0, 0],
       zoom: 2,
       minZoom: 0,
@@ -215,6 +216,7 @@ window.Application = Marionette.Application.extend({
       leftPanelTabIndex: 0,
       rightPanelTabIndex: 0,
       enableSingleLayerMode: true,
+      disableSearchParams: false,
       downloadFormats: [],
       downloadProjections: [],
       downloadInterpolations: [],
@@ -223,8 +225,22 @@ window.Application = Marionette.Application.extend({
       searchEnabled: true,
       selectFilesDownloadEnabled: true,
       filterSettings: null,
+      areaFilterLayerExtent: false,
     });
+    // determine if singleLayerModeUsed
+    const searchEnabledLayers = layersCollection.filter(layerModel => layerModel.get('search.protocol'));
+    const singleLayerModeUsed = searchEnabledLayers.length === 1 && configSettings.enableSingleLayerMode;
 
+    // intercept searchParams to see if config change from user (url)
+    const settings = updateConfigBySearchParams(configSettings);
+    if (singleLayerModeUsed && !settings.disableSearchParams) {
+      // intercept searchParams to see if custom filters set from user (url)
+      updateFiltersBySearchParams(searchEnabledLayers);
+    }
+    if (!settings.disableSearchParams) {
+      // intercept searchParams, substituting layers visibility and search
+      updateLayersBySearchParams(baseLayersCollection, overlayLayersCollection, layersCollection);
+    }
     // set up config
     const mapModel = new MapModel({
       center: settings.center,
@@ -241,8 +257,7 @@ window.Application = Marionette.Application.extend({
     const filtersModel = new FiltersModel({ });
     const highlightModel = new HighlightModel();
 
-    const searchModels = layersCollection
-      .filter(layerModel => layerModel.get('search.protocol'))
+    const searchModels = searchEnabledLayers
       .map(layerModel => new SearchModel({
         layerModel,
         // apply defaults / fixed values
@@ -262,6 +277,23 @@ window.Application = Marionette.Application.extend({
         debounceTime: settings.searchDebounceTime,
       }));
     const searchCollection = new Backbone.Collection(searchModels);
+    if (!settings.disableSearchParams) {
+      // setting listeners for visibility and search changes
+      setSearchParamsLayersChange(baseLayersCollection, overlayLayersCollection, layersCollection, searchCollection, config);
+    }
+    if (singleLayerModeUsed && !settings.disableSearchParams) {
+      // update url searchParams when filter change listener
+      searchModels[0].get('filtersModel').on('change', (fModel) => {
+        setSearchParamsFilterChange(fModel);
+      });
+    }
+
+    if (singleLayerModeUsed && !config.disableSearchParams) {
+      // update url searchParams when filter change listener
+      searchModels[0].get('filtersModel').on('change', (fModel) => {
+        setSearchParamsFilterChange(fModel);
+      });
+    }
 
     // set up layout
     const layout = new RootLayoutView({
@@ -280,7 +312,16 @@ window.Application = Marionette.Application.extend({
       end: new Date(settings.displayTimeDomain[1]),
     } : domain;
 
-    const singleLayerModeUsed = searchCollection.length === 1 && settings.enableSingleLayerMode;
+    if (singleLayerModeUsed) {
+      // re-enable search when display is disabled, but search is enabled
+      searchCollection.each((searchModel) => {
+        const layerModel = searchModel.get('layerModel');
+        const searchEnabled = (typeof layerModel.get('search.searchEnabled') !== 'undefined') ? layerModel.get('search.searchEnabled') : settings.searchEnabled;
+        searchModel.set('automaticSearch', searchEnabled);
+        // decouple display and search on model
+        searchModel.stopListening(layerModel, 'change:display.visible');
+      });
+    }
 
     layout.showChildView('timeSlider', new TimeSliderView({
       layersCollection,
@@ -303,6 +344,7 @@ window.Application = Marionette.Application.extend({
       selectableInterval: settings.selectableInterval,
       maxTooltips: settings.maxTooltips,
       enableDynamicHistogram: settings.enableDynamicHistogram,
+      singleLayerModeUsed
     }));
 
     // set up panels
@@ -370,7 +412,7 @@ window.Application = Marionette.Application.extend({
       sendProcessingRequest(searchModel, mapModel);
     });
 
-    layout.showChildView('content', new OpenLayersMapView({
+    const mainOLView = new OpenLayersMapView({
       mapModel,
       filtersModel,
       baseLayersCollection,
@@ -392,17 +434,34 @@ window.Application = Marionette.Application.extend({
         showRecordDetails(records);
       },
       constrainOutCoords: settings.constrainOutCoords,
-    }));
+      areaFilterLayerExtent: settings.areaFilterLayerExtent,
+      singleLayerModeUsed
+    });
+
+    layout.showChildView('content', mainOLView);
+    if (!settings.disableSearchParams && typeof mainOLView.setupSearchParamsEvents === 'function') {
+      mainOLView.setupSearchParamsEvents();
+      mainOLView.setSearchParamCenter();
+      mainOLView.setSearchParamTime();
+      if (typeof mainOLView.filterFromSearchParams === 'function') {
+        updateAreaBySearchParams(mainOLView);
+      }
+      // zoom is not explicitely set, as some other event already triggers it
+    }
 
     layout.showChildView('leftPanel', new SidePanelView({
       position: 'left',
       icon: 'fa-cog',
       defaultOpen: settings.leftPanelOpen,
       openTabIndex: settings.leftPanelTabIndex,
+      config,
       views: [{
         name: 'Filters',
         view: new RootFiltersView({
           filtersModel,
+          layersCollection,
+          baseLayersCollection,
+          overlayLayersCollection,
           mapModel,
           highlightModel,
           searchCollection,
@@ -434,6 +493,7 @@ window.Application = Marionette.Application.extend({
       layout.showChildView('rightPanel', new SidePanelView({
         position: 'right',
         icon: 'fa-list',
+        config,
         defaultOpen: settings.rightPanelOpen,
         views: [{
           name: 'Search Results',
@@ -458,6 +518,7 @@ window.Application = Marionette.Application.extend({
         icon: 'fa-list',
         defaultOpen: settings.rightPanelOpen,
         openTabIndex: settings.rightPanelTabIndex,
+        config,
         views: [{
           name: 'Search Results',
           hasInfo: true,
@@ -559,8 +620,8 @@ window.Application = Marionette.Application.extend({
 
     // use set timeout here so that vendor info is always at the end of the attribution list
     setTimeout(() => {
-      const vendorInfoHTML = `<li>Powered&nbsp;by&nbsp;<a href="https://github.com/eoxc" target="_blank">EOxC</a>&nbsp;&copy;&nbsp;<a href="https://eox.at" target="_blank">EOX&nbsp;<i class="icon-eox-eye"/></a>
-      <!-- prism Client version ${cdeVersion} https://github.com/eoxc/prism/releases/tag/v${cdeVersion} -->
+      const vendorInfoHTML = `<li>Powered&nbsp;by&nbsp;<a href="https://github.com/eoxc/eoxc" target="_blank">EOxC</a>&nbsp;&copy;&nbsp;<a href="https://eox.at" target="_blank">EOX&nbsp;<i class="icon-eox-eye"/></a>
+      <!-- prism Client version ${cdeVersion} https://gitlab.eox.at/esa/prism/vs/-/tags/v${cdeVersion} -->
       <!-- eoxc version ${eoxcVersion} https://github.com/eoxc/eoxc/releases/tag/v${eoxcVersion} --></li>`;
       $(this.container).find('.ol-attribution ul').append(vendorInfoHTML);
     });

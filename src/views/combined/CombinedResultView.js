@@ -19,17 +19,21 @@ const CombinedResultView = Marionette.LayoutView.extend({
     const id = this.layerModel.get('id');
     const enableFullResolutionDownload = this.layerModel.get('fullResolution.protocol');
     const enableProcessing = this.layerModel.get('processing.url');
+    const isValidDisplay = typeof this.layerModel.get('display').urls !== 'undefined' ? this.layerModel.get('display').urls[0] !== '' : this.layerModel.get('display').url !== '';
     const selectFilesEnabled = typeof this.onSelectFiles !== 'undefined';
     const automaticSearch = this.singleModel.get('automaticSearch');
     const anySelectedToDisplay = this.singleModel.get('downloadSelection').length > 0 || automaticSearch;
+    const initialDisplay = this.layerModel.get('display').visible;
     return {
       id,
       enableFullResolutionDownload,
       enableProcessing,
       selectFilesEnabled,
       anySelectedToDisplay,
+      isValidDisplay,
       automaticSearch,
       downloadEnabled: this.downloadEnabled,
+      initialDisplay
     };
   },
 
@@ -45,7 +49,8 @@ const CombinedResultView = Marionette.LayoutView.extend({
   className: 'search-result-view',
 
   events: {
-    'change input[data-layer]': 'onLayerSelectionChange',
+    'change input[data-layer].search-toggle': 'onSearchToggled',
+    'change input[data-layer].display-toggle': 'onDisplayToggled',
     'click .deselect-all': 'onDeselectAllClicked',
     'click .select-files': 'onSelectFilesClicked',
     'click .start-download': 'onStartDownloadClicked',
@@ -184,7 +189,7 @@ const CombinedResultView = Marionette.LayoutView.extend({
 
   updateResultsPanelSize() {
     // resize results holding div based on variable footer and header sizes
-    const restHeightCombined = this.$('.search-results-toggle').outerHeight(true) + this.$('.search-results-header').outerHeight(true) + this.$('.download-disabled-warning').outerHeight(true) + this.$('.search-results-footer').outerHeight(true) + parseInt(this.$('.result-contents').css('marginBottom'), 10) + parseInt(this.$('.result-contents').css('marginTop'), 10);
+    const restHeightCombined = this.$('.checbox-switch').outerHeight(true) + this.$('.search-results-header').outerHeight(true) + this.$('.download-disabled-warning').outerHeight(true) + this.$('.search-results-footer').outerHeight(true) + parseInt(this.$('.result-contents').css('marginBottom'), 10) + parseInt(this.$('.result-contents').css('marginTop'), 10);
     this.$('.result-contents').height(`calc(100% - ${restHeightCombined}px)`);
   },
 
@@ -206,7 +211,7 @@ const CombinedResultView = Marionette.LayoutView.extend({
     this.updateResultsPanelSize();
   },
 
-  onLayerSelectionChange(event) {
+  onSearchToggled(event) {
     if (event) {
       const $changed = $(event.target);
       this.singleModel.set('automaticSearch', $changed.is(':checked'));
@@ -214,6 +219,13 @@ const CombinedResultView = Marionette.LayoutView.extend({
       this.render();
     }
     this.onSearchModelsChange();
+  },
+
+  onDisplayToggled(event) {
+    if (event) {
+      const $changed = $(event.target);
+      this.layerModel.set('display.visible', $changed.is(':checked'));
+    }
   },
 
   onTermsAndAndConditionsChange(childView, status) {
@@ -226,8 +238,7 @@ const CombinedResultView = Marionette.LayoutView.extend({
   },
 
   onDownloadFullResolutionClick() {
-    const layerModel = this.singleModel.get('layerModel');
-    layerModel.trigger('download-full-resolution', layerModel);
+    this.layerModel.trigger('download-full-resolution', this.layerModel);
   },
 
   onProcessingClick() {
