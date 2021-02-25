@@ -149,14 +149,14 @@ export function updateConfigBySearchParams(config) {
   }
   let actualWindowObject = window;
   if (window.self !== window.top) { // checking if it is an iframe
-    actualWindowObject = window.parent;
+    actualWindowObject = window.top;
   }
   // extracts search parameters in url and update settings replacing keys with user supported ones
   const configUpdate = Object.assign({}, config);
   const params = new URLSearchParams(actualWindowObject.location.search);
   // validate and set time filter
-  const timeStartStr = params.get('timestart') || params.get('time_start');
-  const timeEndStr = params.get('timeend') || params.get('time_end');
+  const timeStartStr = params.get('start');
+  const timeEndStr = params.get('end');
   if (typeof timeStartStr === 'string' && typeof timeEndStr === 'string') {
     const timestart = moment.utc(timeStartStr).toDate();
     let timeend = moment.utc(timeEndStr).toDate();
@@ -206,13 +206,65 @@ export function updateConfigBySearchParams(config) {
       configUpdate.zoom = z - 1;
     }
   }
+
+  // set open panels and tabs
+  const leftPanelOpen = params.get('leftpanel');
+  if (leftPanelOpen === 'true') {
+    configUpdate.leftPanelOpen = true;
+  } else if (leftPanelOpen === 'false') {
+    configUpdate.leftPanelOpen = false;
+  }
+  const rightPanelOpen = params.get('rightpanel');
+  if (rightPanelOpen === 'true') {
+    configUpdate.rightPanelOpen = true;
+  } else if (rightPanelOpen === 'false') {
+    configUpdate.rightPanelOpen = false;
+  }
+  const lptab = params.get('leftpaneltab');
+  if (typeof lptab === 'string') {
+    const lpi = parseInt(lptab, 10);
+    configUpdate.leftPanelTabIndex = lpi;
+  }
+  const rptab = params.get('rightpaneltab');
+  if (typeof rptab === 'string') {
+    const rpi = parseInt(rptab, 10);
+    configUpdate.rightPanelTabIndex = rpi;
+  }
   return configUpdate;
+}
+
+export function updateLayersBySearchParams(baseLayersCollection, overlayLayersCollection, layersCollection) {
+  let actualWindowObject = window;
+  if (window.self !== window.top) { // checking if it is an iframe
+    actualWindowObject = window.top;
+  }
+  // substituting layers visibility
+  const params = new URLSearchParams(actualWindowObject.location.search);
+  [baseLayersCollection, overlayLayersCollection, layersCollection].forEach((coll) => {
+    coll.forEach((layer) => {
+      const layerVisibility = params.get(`${layer.get('id')}_visible`);
+      if (layerVisibility === 'true') {
+        layer.set('display.visible', true);
+      } else if (layerVisibility === 'false') {
+        layer.set('display.visible', false);
+      }
+    });
+  });
+  // substituting layer search
+  layersCollection.forEach((layer) => {
+    const layerSearch = params.get(`${layer.get('id')}_search`);
+    if (layerSearch === 'true') {
+      layer.set('search.searchEnabled', true);
+    } else if (layerSearch === 'false') {
+      layer.set('search.searchEnabled', false);
+    }
+  });
 }
 
 export function updateAreaBySearchParams(mapModel) {
   let actualWindowObject = window;
   if (window.self !== window.top) { // checking if it is an iframe
-    actualWindowObject = window.parent;
+    actualWindowObject = window.top;
   }
   // extracts search parameters in url and update settings replacing keys with user supported ones
   const params = new URLSearchParams(actualWindowObject.location.search);
@@ -226,7 +278,7 @@ export function updateFiltersBySearchParams(layerCollection) {
   // for single layer mode, update values of search filters from url search params
   let actualWindowObject = window;
   if (window.self !== window.top) { // checking if it is an iframe
-    actualWindowObject = window.parent;
+    actualWindowObject = window.top;
   }
   const params = new URLSearchParams(actualWindowObject.location.search);
   const configuredFilters = layerCollection[0].get('search.parameters') || [];
@@ -282,5 +334,48 @@ export function setSearchParamsFilterChange(filtersModel) {
     } else {
       setSearchParam(key, value);
     }
+  });
+}
+
+export function setSearchParamsLayersChange(baseLayersCollection, overlayLayersCollection, layersCollection, searchModels, config) {
+  overlayLayersCollection.forEach((layer) => {
+    layer.on('change:display.visible', () => {
+      const configuredLayer = config.overlayLayers.find(l => l.id === layer.get('id'));
+      // set visible in searchParams only if does not match configured
+      const visible = layer.get('display.visible') !== configuredLayer.display.visible ? layer.get('display.visible') : null;
+      setSearchParam(`${layer.get('id')}_visible`, visible);
+    });
+  });
+
+  layersCollection.forEach((layer) => {
+    layer.on('change:display.visible', () => {
+      const configuredLayer = config.layers.find(l => l.id === layer.get('id'));
+      // set visible in searchParams only if does not match configured
+      const visible = layer.get('display.visible') !== configuredLayer.display.visible ? layer.get('display.visible') : null;
+      setSearchParam(`${layer.get('id')}_visible`, visible);
+    });
+  });
+
+  searchModels.forEach((searchModel) => {
+    searchModel.on('change:automaticSearch', () => {
+      const layerId = searchModel.get('layerModel').get('id');
+      const configuredLayer = config.layers.find(l => l.id === layerId);
+      // set visible in searchParams only if does not match configured globally or for specific layer
+      const searchEnabled = searchModel.get('automaticSearch') !== (typeof configuredLayer.search.searchEnabled !== 'undefined' ? configuredLayer.search.searchEnabled : config.settings.searchEnabled)
+ ? searchModel.get('automaticSearch') : null;
+      setSearchParam(`${layerId}_search`, searchEnabled);
+    });
+  });
+  baseLayersCollection.forEach((layer) => {
+    layer.on('change:display.visible', () => {
+      // disable changing layer from url
+      setSearchParam(`${layer.get('id')}_visible`, null);
+      // find the one that is now enabled, find it in config and compare current state
+      const visibleLayer = baseLayersCollection.find(l => l.get('display.visible') === true);
+      const configuredLayer = config.baseLayers.find(l => l.id === visibleLayer.get('id'));
+      // set visible in searchParams only if does not match configured
+      const visible = visibleLayer.get('display.visible') !== configuredLayer.display.visible ? visibleLayer.get('display.visible') : null;
+      setSearchParam(`${visibleLayer.get('id')}_visible`, visible);
+    });
   });
 }

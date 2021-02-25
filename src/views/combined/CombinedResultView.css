@@ -62,3 +62,7 @@ h4.no-product-selected {
 .download-disabled-warning p{
   margin: 0px;
 }
+
+.panel-title:not(:last-child) {
+  margin-right: 40px;
+}
