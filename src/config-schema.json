@@ -206,6 +206,11 @@
           "type":"boolean",
           "default":true
         },
+        "disableSearchParams" : {
+          "description":"Disable using URL parameters for partial initial app config",
+          "type":"boolean",
+          "default":false
+        },
         "highlightFillColor":{ 
           "description":"The fill color of highlighted footprints/bounding boxes on the map. Any valid CSS color defintion is supported.",
           "type":"string",
@@ -290,6 +295,10 @@
                 "description":"A short description of the parameter, used as a tooltip.",
                 "type":"string"
               },
+              "name":{
+                "description":"Parameter name to be displayed. If not set, 'type' is used.",
+                "type":"string"
+               },
               "options":{ 
                 "description":"Selectable options. Will be rendered as a dropdown.",
                 "type":"array",
@@ -429,6 +438,11 @@
           "description":"Whether 'Download selected files' toggle option is visible.",
           "type":"boolean",
           "default":true
+        },
+        "areaFilterLayerExtent": {
+          "description":"Whether area filter limits layer extent, effectively requesting tiles only for bbox of area filter.",
+          "type":"boolean",
+          "default":false
         }
       },
       "oneOf":[ 
@@ -795,6 +809,10 @@
                     "description":"A short description of the parameter, used as a tooltip.",
                     "type":"string"
                   },
+                  "name":{
+                    "description":"Parameter name to be displayed. If not set, 'type' is used.",
+                    "type":"string"
+                   },
                   "options":{ 
                     "description":"Selectable options. Will be rendered as a dropdown.",
                     "type":"array",
